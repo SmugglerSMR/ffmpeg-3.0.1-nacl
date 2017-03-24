@@ -1,0 +1,57 @@
+#!/bin/sh
+
+export CC=pnacl-clang
+export CXX=pnacl-clang++
+export AR=pnacl-ar
+export RANLIB=pnacl-ranlib
+export READELF=pnacl-readelf
+export CFLAGS=
+export CPPFLAGS='-I/home/smuggler/nacl_sdk/pepper_49/include -I/home/smuggler/nacl_sdk/pepper_49/toolchain/linux_pnacl/le32-nacl/usr/include'
+export CXXFLAGS=
+export LDFLAGS='-L/home/smuggler/nacl_sdk/pepper_49/lib/pnacl/Release -L/home/smuggler/nacl_sdk/pepper_49/toolchain/linux_pnacl/le32-nacl/usr/lib'
+export AR_FLAGS=cr
+export PKG_CONFIG_LIBDIR=/home/smuggler/nacl_sdk/pepper_49/toolchain/linux_pnacl/le32-nacl/usr/lib/pkgconfig
+#export PKG_CONFIG_PATH=/home/smuggler/ffmpeg-3.0.1/build/pkgconfig
+
+./configure \
+    --target-os=linux \
+    --arch=pnacl \
+    --disable-runtime-cpudetect \
+    --cross-prefix=pnacl- \
+    --cc=pnacl-clang \
+    --ld=pnacl-clang++ \
+    --pkg_config=pkg-config \
+    --enable-gpl \
+    --enable-static \
+    --disable-shared \
+    --enable-incompatible-libav-abi \
+    --enable-cross-compile \
+    --disable-ffplay \
+    --disable-doc \
+    --disable-ffserver \
+    --disable-asm \
+    --disable-inline-asm \
+    --disable-indevs \
+    --disable-network \
+    --enable-protocol=file \
+    --disable-demuxer=rtsp \
+    --disable-demuxer=image2 \
+    --disable-doc \
+    --disable-manpages \
+    --disable-podpages \
+    --disable-txtpages \
+    --disable-network \
+    --extra-libs='-lppapi_simple -lppapi -lppapi_cpp -lnacl_io' \
+    --enable-libmp3lame \
+    --enable-libvorbis \
+    --enable-libtheora \
+    --disable-iconv \
+    --disable-sdl \
+    --enable-zlib \
+    --enable-libx264 \
+    --enable-libx265 \
+    --enable-libvpx \
+    --disable-ffprobe \
+    --enable-protocol=http \
+    --enable-openssl \
+    --enable-nonfree
