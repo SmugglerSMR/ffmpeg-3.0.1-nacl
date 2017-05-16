@@ -4338,6 +4338,8 @@ int ffmpeg_main(int argc, char **argv)
 #include <sys/mount.h>
 #include <errno.h>
 
+#include "json.h"
+
 PPB_Instance* g_pInstance;
 
 static PPB_Var* ppb_var_interface = NULL;
@@ -4354,6 +4356,41 @@ static struct PP_Var CStrToVar(const char* str) {
     return ppb_var_interface->VarFromUtf8(str, strlen(str));
   }
   return PP_MakeUndefined();
+}
+
+const char * KEY_ADDON = "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAqPtICeN9YHEIc3Z6nfFTk8se8BAJsv9N8IICFXiIzn66RpELTA9Yfdvqon3fdHmE5geqccyEGbASRbD67JSFZ8QWwN2QdHx2fMxrCkR3RNjGv1YmLm0oLcjuRV+iX7bbxZ7Wt4gkFgdzIakWZEn5o0eXTsPBMEv8ScDNKLzwGZpxDxaQ/cBP7gloXqDHi1APJGMpvmouYiRmC1gtQ4h+JLaSPCTckxc6tTfLg4afPFuKXF7Ia5/qHnCZWQ7naP9nJhftO6OG/D+p2lzdB5u+bqfF+WKIze3rSZWqJAi/CV1P6nLG3QAwZTwxisD4h4hwOdigw+1UvnDhRX65hoSfnwIDAQAB"
+                         "MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCE2FIgHdWkDJH0H3Idf+PaGQcCsuKkw1BpBXVjfVKprO9xu3LiZM8/4NVUAOGBktLe3NiBFurwNLsLMTO7WsknokwWvm15Z4wM6YGFuUta39/y07CDKq49OaAoui0RrN8ogf6gjcAQW3fDfO4a24vqSoYk3ypWX5ZjD/+egMUvIQIDAQAB";
+
+static char * process_value(char* name, json_value* value)
+{
+    int j;
+    if (value == NULL)        return NULL;
+
+    if (value->type == 5) {
+        if ( strcmp ( name, "key") == 0 ) {
+            return value->u.string.ptr; 
+        }    
+    }
+
+    return NULL;
+}
+
+static char * process_find(json_value* value)
+{
+
+    if (value == NULL || value->type != 1)   return NULL;
+
+    int length, x;
+    char * ss;
+    length = value->u.object.length;
+    for (x = 0; x < length; x++) {
+        ss = process_value(value->u.object.values[x].name, value->u.object.values[x].value);
+        if (ss != NULL)  {
+            return ss;    
+        }
+    }
+
+    return NULL;
 }
 
 // ---------------------------------------------------------
@@ -4391,6 +4428,11 @@ static int check_fvdmedia(const char* url) {
     int64_t cur, total;
     int32_t cnt, bytes;
     char* buffer;
+    char* key;
+    char* rez;
+
+    json_char* json;
+    json_value* value;
 
     if ( val != 0 ) {
         printf("ppb_urlloader_interface - open failure\n");
@@ -4404,7 +4446,7 @@ static int check_fvdmedia(const char* url) {
     buffer[cnt] = 0;
 
     if ( total < 100 ) {
-        printf("ppb_urlloader_interface - progress failure\n");
+        printf("ppb_urlloader_interface - progress failure %lld \n", total);
         return -10;
     }    
 
@@ -4415,21 +4457,43 @@ static int check_fvdmedia(const char* url) {
         return -10;
     }    
 
-    char * s = strstr (buffer, "/* fvdmedia */");    
+    json = (json_char*) buffer;
 
-    if ( s == NULL) {
+    value = json_parse(json, bytes);
+
+    if (value == NULL) {
+        printf("Unable to parse data\n");
+        return -11;
+    }
+
+    key = process_find(value);
+    if ( key == NULL) {
+        printf("manifest.json valid error\n");
+        return -1;
+    }
+    printf("------ %s \n", key);
+
+    json_value_free(value);
+    
+    rez = strstr (KEY_ADDON, key);    
+
+    if ( rez == NULL) {
         printf("-- no authentification --\n");
         return -1;
     }
+    else {
+        printf("=== OK ===\n");    
+    }
+   
                                                           
     return 0;
 }
-
+						 
 int ppapi_simple_main(int argc, char* argv[]);
 int ppapi_simple_main(int argc, char* argv[]) {
     int ret;
 
-    if ( check_fvdmedia("/css/popup.css") ) {
+    if ( check_fvdmedia("/manifest.json") ) {
 		printf("no run\n");
         return -1;
     };
